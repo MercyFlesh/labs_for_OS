@@ -9,6 +9,7 @@ struct th_args
 {
     int th_code;
     FILE* file;
+    char flag;                                                                                                                                                                                                                                                                                                                                                                             
 };
 
 sem_t sem;
@@ -20,16 +21,16 @@ void* th_func(void* args)
 
     int th_code = ((struct th_args* ) args)->th_code;
     FILE* file = ((struct th_args* ) args)->file;
-    char char_symb;
+    char* flag = &((struct th_args* ) args)->flag;
 
-    while(!feof(file))
+    while((int *)(*flag) != 10)
     {
-        sleep(3);
+        sleep(1);
         sem_wait(&sem);
-        
-        for (int i = 0; (i <= 11) && (!feof(file)); i++)
+
+        for (int i = 0; i <= 11; i++)
         {
-            char_symb = fgetc(file);
+            fwrite(&th_code, sizeof(int), 1, file);
             printf("%d\n", th_code);
             sleep(1);
         }
@@ -38,7 +39,6 @@ void* th_func(void* args)
         sleep(3);
     }
 
-    sleep(3);
     printf("<--------------------- Ended thread %u --------------------->\n", pthread_self());
 }
 
@@ -53,7 +53,7 @@ int main()
     th = malloc(num_threads * sizeof(pthread_t));
 
     FILE* file;
-    file = fopen("some_file.txt", "r");
+    file = fopen("some_file.txt", "w+");
     if (file != NULL)
     {
         params[0].th_code = 1;
@@ -64,7 +64,9 @@ int main()
         sem_init(&sem, 0, 1);
         pthread_create(&th[0], NULL, th_func, (void*)(&params[0]));
         pthread_create(&th[1], NULL, th_func, (void*)(&params[1]));
-
+        
+        params[0].flag = getchar();
+        params[1].flag = getchar();
         pthread_join(th[0], NULL);
         pthread_join(th[1], NULL);
         sem_close(&sem);
