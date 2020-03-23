@@ -3,6 +3,8 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <fcntl.h>
+#include <errno.h>
+#include <string.h>
 
 struct th_args
 {
@@ -37,13 +39,20 @@ void* reader(void* args)
     printf("<--------------------- Started reader %u --------------------->\n", pthread_self());
     
     char* flag = &((struct th_args* ) args)->flag;
+    errno = 0;
     char* buf;
 
     while ((int *)(*flag) != 10)
     {   
-        buf = ' ';
-        read(fd[0], &buf, 1);
-        printf ("Reader: %c\n", buf);
+        if(read(fd[0], &buf, 1) != -1)
+        {
+            printf ("Reader: %c\n", buf);
+        }
+        else
+        {
+            printf("Failed read with error: %s\n", strerror(errno));
+        }
+
         sleep(1);
     }
 

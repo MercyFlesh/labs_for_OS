@@ -11,7 +11,7 @@ int main(int argc, char* argv[])
     printf("Process lab_4_1 pid: %d\n", getpid());
     printf("Parent lab_4_1 pid: %d\n", getppid());
 
-    if (argc >= 3 && argc <= 5)
+    if (argc >= 4 && argc <= 6)
     {
         for (int i = 1; i < argc; i++)
         {
