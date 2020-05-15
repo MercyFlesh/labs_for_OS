@@ -8,6 +8,8 @@
 #include <fcntl.h>
 
 
+void close_data(void* args);
+
 struct th_args
 {
     int th_code;
@@ -41,20 +43,24 @@ void* th_func(void* args)
             if (sem_post(sem) == -1)
             {
                 printf("Failed to unlock semaphore whith error: %s\n", strerror(errno));
+                close_data(args);
                 exit(EXIT_FAILURE);
             }
         }
-        
-        
         
         sleep(1);
     }
 }
 
+void close_data(void* args)
+{
+    close(((struct th_args* ) args)->file);
+    sem_close(sem);
+    sem_unlink("semaphore_1");
+}
 
 int main()
 {
-    int ret;
     errno = 0;
     struct th_args params;
     pthread_t th;
@@ -67,20 +73,20 @@ int main()
     if(pthread_create(&th, NULL, th_func, (void*)(&params)))
     {
         printf("Thread create failed with error: %s\n", strerror(errno));
+        close_data((void*)&params);
         return -errno;
     }
-    
-    
         
     params.flag = getchar();
     
-    if (pthread_join(th, &status) != 0)
+    int res = pthread_join(th, &status);
+    if (res != 0)
     {
-        printf("Thread join failed with error: %s\n", strerror(errno));
+        printf("Thread join failed with error: %s\n", strerror(res));
+        close_data((void*)&params);
         return -errno;
     }
-    close(params.file);
-    sem_close(sem);
-    sem_unlink("semaphore_1");
+
+    close_data((void*)&params);
     return 0;
 }
